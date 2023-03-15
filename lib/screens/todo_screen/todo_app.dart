@@ -20,6 +20,7 @@ class _ToDoAppState extends State<ToDoApp> {
 
   // Variable of backend
   String img = '';
+  final searchController = TextEditingController();
 
 // Function to get data from user
   void getData() async {
@@ -45,7 +46,29 @@ class _ToDoAppState extends State<ToDoApp> {
         backgroundColor: Colors.grey.shade200,
         // Navigation bar
         appBar: _headerWithImageandLogout(context),
-        body: Column(),
+        body: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Column(
+            children: [
+              const SizedBox(
+                height: 20,
+              ),
+              Container(
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20)),
+                // ignore: prefer_const_constructors
+                child: TextField(
+                  controller: searchController,
+                  decoration: const InputDecoration(
+                      prefixIcon: Icon(Icons.search),
+                      border: InputBorder.none,
+                      labelText: "Search"),
+                ),
+              )
+            ],
+          ),
+        ),
       ),
     );
   }
