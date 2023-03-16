@@ -50,7 +50,7 @@ class _UserProfileState extends State<UserProfile> {
     }
   }
 
-  // Ge data
+  // Get data
   void getData() async {
     final userId = _auth.currentUser;
     var userData = await _firestorage.collection("user").doc(userId!.uid).get();
@@ -112,9 +112,7 @@ class _UserProfileState extends State<UserProfile> {
                 InkWell(
                   onTap: edit
                       ? () {
-                          setState(() {
-                            getData();
-                          });
+                          getImage();
                         }
                       : null,
                   child: Container(

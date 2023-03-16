@@ -19,8 +19,10 @@ class _ToDoAppState extends State<ToDoApp> {
   final _fireStore = FirebaseFirestore.instance;
 
   // Variable of backend
+  final _formKey = GlobalKey<FormState>();
   String img = '';
   final searchController = TextEditingController();
+  final todoAddController = TextEditingController();
 
 // Function to get data from user
   void getData() async {
@@ -31,12 +33,15 @@ class _ToDoAppState extends State<ToDoApp> {
     });
   }
 
+  @override
+  void initState() {
+    super.initState();
+    getData();
+  }
+
   // Main Function
   @override
   Widget build(BuildContext context) {
-    setState(() {
-      getData();
-    });
     return WillPopScope(
       onWillPop: () async {
         SystemNavigator.pop();
@@ -48,24 +53,56 @@ class _ToDoAppState extends State<ToDoApp> {
         appBar: _headerWithImageandLogout(context),
         body: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Column(
+          child: Stack(
             children: [
-              const SizedBox(
-                height: 20,
-              ),
-              Container(
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20)),
-                // ignore: prefer_const_constructors
-                child: TextField(
-                  controller: searchController,
-                  decoration: const InputDecoration(
-                      prefixIcon: Icon(Icons.search),
-                      border: InputBorder.none,
-                      labelText: "Search"),
+              // Seaarch Bar
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Container(
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20)),
+                  // ignore: prefer_const_constructors
+                  child: TextField(
+                    controller: searchController,
+                    decoration: const InputDecoration(
+                        prefixIcon: Icon(Icons.search),
+                        border: InputBorder.none,
+                        labelText: "Search"),
+                  ),
                 ),
-              )
+              ),
+              // todo App logo
+              // Todo Text
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 100),
+                child: Align(
+                    alignment: Alignment.topLeft,
+                    child: Text(
+                      "All ToDos",
+                      style:
+                          TextStyle(fontSize: 30, fontWeight: FontWeight.w600),
+                    )),
+              ),
+
+              // Builder
+              Padding(
+                padding: const EdgeInsets.only(top: 150),
+                child: Expanded(child: _dataLoading()),
+              ),
+              // Align(
+              //   alignment: Alignment.bottomLeft,
+              //   child: Row(
+              //     children: [
+              //       Form(
+              //           key: _formKey,
+              //           child: Container(
+              //               height: 35,
+              //               color: Colors.white,
+              //               child: TextFormField()))
+              //     ],
+              //   ),
+              // )
             ],
           ),
         ),
@@ -73,6 +110,78 @@ class _ToDoAppState extends State<ToDoApp> {
     );
   }
 
+  StreamBuilder<QuerySnapshot<Object?>> _dataLoading() {
+    return StreamBuilder<QuerySnapshot>(
+        stream: _fireStore
+            .collection('todoitem')
+            .doc(_auth.currentUser!.uid)
+            .collection('usertodo')
+            .snapshots(),
+        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+          // Waiting for response
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const CircularProgressIndicator();
+          }
+          // print error if occured
+          if (snapshot.hasError) {
+            Fluttertoast.showToast(
+                msg: "Some error occoured!, please reopen app",
+                backgroundColor: Colors.deepPurple,
+                textColor: Colors.white);
+          }
+          return Expanded(
+            child: ListView.builder(
+                itemCount: snapshot.data!.docs.length,
+                itemBuilder: (context, index) {
+                  final data = snapshot.data!.docs[index];
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 10, bottom: 10),
+                    child: Container(
+                      decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: Colors.white),
+                      child: ListTile(
+                        onTap: () {},
+                        leading: Icon(
+                          data['done']
+                              ? Icons.check_box
+                              : Icons.check_box_outline_blank,
+                          color: Colors.blue,
+                        ),
+                        title: Text(
+                          data['Todo'],
+                          style: TextStyle(
+                              fontSize: 16,
+                              decoration: data['done']
+                                  ? TextDecoration.lineThrough
+                                  : null),
+                        ),
+                        trailing: Container(
+                            height: 35,
+                            width: 35,
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: Colors.red),
+                            child: IconButton(
+                                onPressed: () {
+                                  _fireStore
+                                      .collection('todoitem')
+                                      .doc(_auth.currentUser!.uid)
+                                      .collection('usertodo')
+                                      .doc(data['id'])
+                                      .delete();
+                                },
+                                icon: const Icon(Icons.delete,
+                                    color: Colors.white, size: 20))),
+                      ),
+                    ),
+                  );
+                }),
+          );
+        });
+  }
+
+// header of the app
   AppBar _headerWithImageandLogout(BuildContext context) {
     return AppBar(
       automaticallyImplyLeading: false,
@@ -124,4 +233,5 @@ class _ToDoAppState extends State<ToDoApp> {
       ),
     );
   }
+  //
 }
